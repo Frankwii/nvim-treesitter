@@ -140,12 +140,14 @@ function M.attach(bufnr)
   for funcname, mapping in pairs(config.keymaps) do
     if mapping then
       local mode = funcname == "init_selection" and "n" or "x"
+      local keys = mapping.keys~=nil and mapping.keys or mapping -- compatibility with previous way of configuring
+      local description = mapping.desc~=nil and mapping.desc or FUNCTION_DESCRIPTIONS[funcname]
       local rhs = M[funcname] ---@type function
 
       if not rhs then
         utils.notify("Unknown keybinding: " .. funcname .. debug.traceback(), vim.log.levels.ERROR)
       else
-        vim.keymap.set(mode, mapping, rhs, { buffer = bufnr, silent = true, desc = FUNCTION_DESCRIPTIONS[funcname] })
+        vim.keymap.set(mode, keys, rhs, { buffer = bufnr, silent = true, desc = description })
       end
     end
   end
@@ -156,7 +158,8 @@ function M.detach(bufnr)
   for f, mapping in pairs(config.keymaps) do
     if mapping then
       local mode = f == "init_selection" and "n" or "x"
-      local ok, err = pcall(vim.keymap.del, mode, mapping, { buffer = bufnr })
+      local keys = mapping.keys~=nil and mapping.keys or mapping
+      local ok, err = pcall(vim.keymap.del, mode, keys, { buffer = bufnr })
       if not ok then
         utils.notify(string.format('%s "%s" for mode %s', err, mapping, mode), vim.log.levels.ERROR)
       end
